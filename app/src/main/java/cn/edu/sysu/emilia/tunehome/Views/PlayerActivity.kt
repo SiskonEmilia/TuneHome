@@ -9,46 +9,35 @@ import android.content.*
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.media.AudioManager
+import android.net.Uri
+import android.os.*
+import android.provider.MediaStore
+import android.support.constraint.ConstraintSet
+import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
+import android.transition.ChangeBounds
+import android.transition.TransitionManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
-import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import android.view.animation.RotateAnimation
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
 import cn.edu.sysu.emilia.tunehome.Adapters.SongListAdapter
 import cn.edu.sysu.emilia.tunehome.Model.Song
 import cn.edu.sysu.emilia.tunehome.R
-import cn.edu.sysu.emilia.tunehome.Utils.BlurUtil
-import de.hdodenhof.circleimageview.CircleImageView
-import kotlinx.android.synthetic.main.activity_player.*
-import com.orhanobut.dialogplus.DialogPlus
-import android.media.MediaMetadataRetriever
-import android.net.Uri
-import android.os.*
-import android.provider.MediaStore
-import android.support.annotation.ColorInt
-import android.support.constraint.ConstraintSet
-import android.support.v4.app.ActivityCompat
-import android.transition.ChangeBounds
-import android.transition.TransitionManager
-import android.view.animation.AnticipateOvershootInterpolator
 import cn.edu.sysu.emilia.tunehome.Services.PlayerService
+import cn.edu.sysu.emilia.tunehome.Utils.BlurUtil
 import cn.edu.sysu.emilia.tunehome.Utils.OnSwipeTouchListener
 import com.jaygoo.widget.OnRangeChangedListener
 import com.jaygoo.widget.RangeSeekBar
-import kotlinx.android.synthetic.main.playlist_item.*
+import com.orhanobut.dialogplus.DialogPlus
+import de.hdodenhof.circleimageview.CircleImageView
+import kotlinx.android.synthetic.main.activity_player.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import java.io.File
 import java.io.InputStream
-import java.lang.Exception
 
 
 public enum class PlayStatus {PLAYING, PAUSE, STOP}
@@ -302,6 +291,16 @@ class PlayerActivity : AppCompatActivity(){
         if (newPosition != null && newPosition != -1) {
             switchToSongPosition(newPosition)
         }
+
+        if (musicSrv?.isPlaying() == true) {
+            onPlayStatusChanged(PlayStatus.PLAYING)
+        }
+        else if (musicSrv?.isPaused() == true) {
+            onPlayStatusChanged(PlayStatus.PAUSE)
+        }
+        else {
+            onPlayStatusChanged(PlayStatus.STOP)
+        }
     }
 
     override fun onStop() {
@@ -318,7 +317,7 @@ class PlayerActivity : AppCompatActivity(){
             animator?.repeatMode = ValueAnimator.RESTART
         }
         if (animator?.isPaused == true)  animator?.resume()
-        else animator?.start()
+        else if (animator?.isRunning == false) animator?.start()
     }
 
     private fun stopRotate() {

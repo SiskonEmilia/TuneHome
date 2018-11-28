@@ -1,16 +1,12 @@
 package cn.edu.sysu.emilia.tunehome.Services
 
 import android.app.Service
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.MediaPlayer
-import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
-import android.media.session.PlaybackState
 import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
@@ -20,16 +16,9 @@ import android.view.KeyEvent
 import cn.edu.sysu.emilia.tunehome.Model.Song
 import cn.edu.sysu.emilia.tunehome.Views.PlayPosition
 import cn.edu.sysu.emilia.tunehome.Views.PlayStatus
-import cn.edu.sysu.emilia.tunehome.Views.PlayerActivity
 import org.greenrobot.eventbus.EventBus
 import java.util.*
 import kotlin.random.Random
-import android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS
-import android.view.KeyEvent.KEYCODE_MEDIA_NEXT
-import android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-import android.view.KeyEvent.KEYCODE_HEADSETHOOK
-import android.view.KeyEvent.KEYCODE_MEDIA_STOP
-
 
 
 class PlayerService: Service(), MediaPlayer.OnPreparedListener,
@@ -294,6 +283,10 @@ class PlayerService: Service(), MediaPlayer.OnPreparedListener,
 
     fun isPlaying() : Boolean {
         return mMediaPlayer.isPlaying
+    }
+
+    fun isPaused() : Boolean {
+        return isPaused
     }
 
     fun getCurrentPosition(): Int? {
