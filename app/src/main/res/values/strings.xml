@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">TuneHome</string>
+    <string name="test_string"></string>
+    <string name="test_time">00:00</string>
+</resources>

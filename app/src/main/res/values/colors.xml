@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorAccent">#D81B60</color>
+
+    <color name="semiTransparentBlack">#66333333</color>
+    <color name="semiTransparentWhite">#55ffffff</color>
+    <color name="playListBackground">#66dddddd</color>
+    <color name="playListItemBackground">#eeeeee</color>
+    <color name="itemTitle">#333333</color>
+
+    <color name="backgroundSemiTransparent">#33444444</color>
+</resources>
