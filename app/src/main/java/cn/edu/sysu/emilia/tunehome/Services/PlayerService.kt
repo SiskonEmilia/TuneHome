@@ -2,10 +2,15 @@ package cn.edu.sysu.emilia.tunehome.Services
 
 import android.app.Service
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.session.MediaController
+import android.media.session.MediaSession
+import android.media.session.MediaSessionManager
+import android.media.session.PlaybackState
 import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
@@ -20,6 +25,52 @@ import kotlin.random.Random
 
 class PlayerService: Service(), MediaPlayer.OnPreparedListener,
     MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
+
+    companion object {
+        private const val LOG_TAG = "cn.edu.sysu.emilia.LOG_TAG"
+    }
+
+    // MediaSession
+    private var mMediaSessionManager : MediaSessionManager? = null
+    private var mMediaSession : MediaSession? = null
+
+    private fun initialMediaSession() {
+        if (mMediaSessionManager != null) return
+        mMediaSessionManager = getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+        mMediaSession = MediaSession(applicationContext, LOG_TAG)
+        mMediaSession?.isActive = true
+        mMediaSession?.setCallback(object : MediaSession.Callback() {
+            override fun onPlay() {
+                super.onPlay()
+                playOperation(PlayOperation.PLAY)
+            }
+
+            override fun onPause() {
+                super.onPause()
+                playOperation(PlayOperation.PAUSE)
+            }
+
+            override fun onSkipToNext() {
+                super.onSkipToNext()
+                playOperation(PlayOperation.NEXT)
+            }
+
+            override fun onSkipToPrevious() {
+                super.onSkipToPrevious()
+                playOperation(PlayOperation.PREVIOUS)
+            }
+
+            override fun onStop() {
+                super.onStop()
+                playOperation(PlayOperation.STOP)
+            }
+
+            override fun onSeekTo(pos: Long) {
+                super.onSeekTo(pos)
+                setCurrentSeek(pos.toInt())
+            }
+        })
+    }
 
     private lateinit var mMediaPlayer: MediaPlayer
     public lateinit var mSongList: ArrayList<Song>
