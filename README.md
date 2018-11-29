@@ -8,7 +8,7 @@ TuneHome 是一个美观、轻量的 Android 音乐播放器，支持播放列�
 
 支持播放列表：
 
-![PlayList](Assets/PlayList.jpg)
+![PlayList](Assets/Playlist.jpg)
 
 点击专辑图可切换不同的显示风格
 
