@@ -7,7 +7,8 @@
         android:layout_height="match_parent"
         android:background="@android:color/white"
         android:id="@+id/rootLayout"
-        tools:context=".Views.PlayerActivity">
+        tools:context=".Views.PlayerActivity"
+        android:fitsSystemWindows="true">
 
     <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
                android:background="@android:color/transparent"
@@ -172,6 +173,7 @@
     <ImageButton
             android:layout_width="32dp"
             android:layout_height="32dp" app:srcCompat="@drawable/previous"
+            android:padding="4dp"
             android:id="@+id/previousButton"
             android:onClick="onButtonsClick"
             app:layout_constraintTop_toTopOf="@+id/playButton"
@@ -181,6 +183,7 @@
     <ImageButton
             android:layout_width="32dp"
             android:layout_height="32dp" app:srcCompat="@drawable/next"
+            android:padding="4dp"
             android:id="@+id/nextButton"
             android:onClick="onButtonsClick"
             app:layout_constraintTop_toTopOf="@+id/playButton"

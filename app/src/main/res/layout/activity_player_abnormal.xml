@@ -39,7 +39,8 @@
             android:maxLines="1"
             android:textSize="20sp"
             android:textColor="@android:color/white" android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toStartOf="@+id/exitButton" app:layout_constraintHorizontal_bias="0.0"/>
+            app:layout_constraintEnd_toStartOf="@+id/exitButton" app:layout_constraintHorizontal_bias="0.0"
+    />
     <TextView
             android:text="@string/test_string"
             android:layout_width="0dp"
@@ -91,7 +92,7 @@
             android:textColor="@color/semiTransparentWhite"
             android:textAlignment="center" style="@style/ShadowedFont"
             android:ellipsize="end"
-            android:maxLines="1" android:layout_marginTop="20dp"/>
+            android:maxLines="1" android:layout_marginTop="20dp" tools:text="123"/>
     <TextView
             android:text="@string/test_string"
             android:layout_width="0dp"
@@ -102,10 +103,10 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textSize="26sp"
-            android:textColor="@android:color/white" android:layout_marginTop="4dp"
+            android:textColor="@android:color/white"
             android:textAlignment="center" style="@style/ShadowedFont"
             android:ellipsize="end"
-            android:maxLines="1"/>
+            android:maxLines="1" tools:text="123"/>
     <TextView
             android:text="@string/test_string"
             android:layout_width="0dp"
@@ -119,7 +120,7 @@
             android:textColor="@color/semiTransparentWhite"
             android:textAlignment="center" style="@style/ShadowedFont"
             android:ellipsize="end"
-            android:maxLines="1"/>
+            android:maxLines="1" tools:text="123"/>
 
     <com.jaygoo.widget.RangeSeekBar
             android:layout_width="0dp"

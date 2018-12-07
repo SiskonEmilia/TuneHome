@@ -3,6 +3,7 @@ package cn.edu.sysu.emilia.tunehome.Services
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.session.MediaSession
@@ -98,6 +99,7 @@ class PlayerService: Service(), MediaPlayer.OnPreparedListener,
                     KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
                         onSkipToPrevious()
                     }
+                    KeyEvent.KeyCode_
                 }
                 return true
             }

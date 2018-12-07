@@ -9,6 +9,7 @@ import android.content.*
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.media.MediaMetadata
 import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
@@ -38,6 +39,8 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.io.InputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 
 
 public enum class PlayStatus {PLAYING, PAUSE, STOP}
@@ -51,13 +54,12 @@ class PlayerActivity : AppCompatActivity(){
         lateinit var defaultBlurredCover : Bitmap
         lateinit var mNewBackground : ImageView
         lateinit var mOldBackground : ImageView
+        var musicSrv : PlayerService? = null
     }
 
     private var songs: ArrayList<Song> = ArrayList()
     private lateinit var mAdapter : SongListAdapter
-    private lateinit var mHeader : View
     private var mplayStatus = PlayStatus.PAUSE
-    private var musicSrv : PlayerService? = null
     private var playIntent : Intent? = null
     private var musicBound = false
     private var animator : ObjectAnimator? = null
@@ -65,6 +67,7 @@ class PlayerActivity : AppCompatActivity(){
     private var mHandler = Handler()
     private var process : Float = 0f
     private var normalDisplay = true
+    private var mDialog : DialogPlus? = null
 
 
     private var serviceConnection = object : ServiceConnection {
@@ -74,6 +77,18 @@ class PlayerActivity : AppCompatActivity(){
             musicSrv?.mSongList = songs
             musicBound = true
 
+            var newPosition = musicSrv?.getCurrentSong()
+            if (newPosition != null && newPosition != -1) {
+                switchToSongPosition(newPosition)
+            }
+
+            if (musicSrv?.isPlaying() == true) {
+                onPlayStatusChanged(PlayStatus.PLAYING)
+            } else if (musicSrv?.isPaused() == true) {
+                onPlayStatusChanged(PlayStatus.PAUSE)
+            } else {
+                onPlayStatusChanged(PlayStatus.STOP)
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -106,6 +121,16 @@ class PlayerActivity : AppCompatActivity(){
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPlayingMusicChanged(playPosition : PlayPosition) {
         switchToSongPosition(playPosition.position)
+    }
+
+    data class ClickedItemPostion(val position: Int)
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onPlaylistItemClicked(position: ClickedItemPostion) {
+        musicSrv?.playAt(position.position)
+        switchToSongPosition(position.position)
+        onPlayStatusChanged(PlayStatus.PLAYING)
+        mDialog?.dismiss()
     }
 
     fun switchToSongPosition(position: Int) {
@@ -143,18 +168,12 @@ class PlayerActivity : AppCompatActivity(){
     }
 
     protected fun setStatusBarImmersiveMode(color : Int) {
-
-        // StatusBar
-        if (Build.VERSION.SDK_INT >= 19) { // 19, 4.4, KITKAT
-            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        }
-        if (Build.VERSION.SDK_INT >= 21) { // 21, 5.0, LOLLIPOP
-            window.attributes.systemUiVisibility = window.attributes.systemUiVisibility.or(
-                    (View.SYSTEM_UI_FLAG_LAYOUT_STABLE.or(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)))
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.statusBarColor = color
-        }
+        window.attributes.systemUiVisibility = window.attributes.systemUiVisibility.or(
+                (View.SYSTEM_UI_FLAG_LAYOUT_STABLE.or(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    .or(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION.or(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        .or(View.SYSTEM_UI_FLAG_IMMERSIVE))))))
+          window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        window.statusBarColor = color
 
     }
 
@@ -162,6 +181,17 @@ class PlayerActivity : AppCompatActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
+
+        try {
+            openFileInput("PlayList").use {fileInputStream ->
+                var ois = ObjectInputStream(fileInputStream)
+                songs = ois.readObject() as ArrayList<Song>
+                ois.close()
+                fileInputStream.close()
+            }
+        } catch (e : java.lang.Exception) {
+            e.printStackTrace()
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             val w = window // in Activity's onCreate() for instance
@@ -182,7 +212,6 @@ class PlayerActivity : AppCompatActivity(){
         listModeButton.alpha = 0.6f
 
         mAdapter = SongListAdapter(this, songs)
-        mHeader = LayoutInflater.from(this).inflate(R.layout.playlist_header, null)
         playButton.setOnLongClickListener {
             if (mplayStatus == PlayStatus.PLAYING) {
                 musicSrv?.playOperation(PlayerService.PlayOperation.STOP)
@@ -275,6 +304,10 @@ class PlayerActivity : AppCompatActivity(){
             normalDisplay = !normalDisplay
         }
 
+        exitButton.setOnLongClickListener {
+            onBackPressed()
+            true
+        }
     }
 
     override fun onStart() {
@@ -286,24 +319,34 @@ class PlayerActivity : AppCompatActivity(){
             bindService(playIntent, serviceConnection, Context.BIND_AUTO_CREATE)
             startService(playIntent)
         }
-
-        var newPosition = musicSrv?.getCurrentSong()
-        if (newPosition != null && newPosition != -1) {
-            switchToSongPosition(newPosition)
-        }
-
-        if (musicSrv?.isPlaying() == true) {
-            onPlayStatusChanged(PlayStatus.PLAYING)
-        }
-        else if (musicSrv?.isPaused() == true) {
-            onPlayStatusChanged(PlayStatus.PAUSE)
-        }
         else {
-            onPlayStatusChanged(PlayStatus.STOP)
+            var newPosition = musicSrv?.getCurrentSong()
+            if (newPosition != null && newPosition != -1) {
+                switchToSongPosition(newPosition)
+            }
+
+            if (musicSrv?.isPlaying() == true) {
+                onPlayStatusChanged(PlayStatus.PLAYING)
+            } else if (musicSrv?.isPaused() == true) {
+                onPlayStatusChanged(PlayStatus.PAUSE)
+            } else {
+                onPlayStatusChanged(PlayStatus.STOP)
+            }
         }
     }
 
     override fun onStop() {
+        try {
+            openFileOutput("PlayList", Context.MODE_PRIVATE).use { fileOutputStream ->
+                var oos = ObjectOutputStream(fileOutputStream)
+                oos.writeObject(songs)
+                oos.close()
+                fileOutputStream.close()
+            }
+        } catch (e : java.lang.Exception) {
+            e.printStackTrace()
+        }
+
         super.onStop()
         EventBus.getDefault().unregister(this)
     }
@@ -350,29 +393,41 @@ class PlayerActivity : AppCompatActivity(){
                 musicSrv?.playOperation(PlayerService.PlayOperation.NEXT)
             }
             R.id.playListButton -> {
-                val dialog = DialogPlus.newDialog(this)
+                mDialog = DialogPlus.newDialog(this)
                     .setAdapter(mAdapter)
-                    .setOnItemClickListener { dialog, item, view, position ->
-                        musicSrv?.playAt(position)
-                        switchToSongPosition(position)
-                        onPlayStatusChanged(PlayStatus.PLAYING)
-                        dialog.dismiss()
-                    }
-                    .setOnClickListener { dialog, view ->
-                        if (view.id == R.id.addButton) {
-                            val galleryIntent =
-                                Intent(Intent.ACTION_PICK, android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
-                            startActivityForResult(galleryIntent, AUDIO_GALLERY_REQUEST_CODE)
+//                    .setOnItemClickListener { dialog, item, view, position ->
+//                        musicSrv?.playAt(position)
+//                        switchToSongPosition(position)
+//                        onPlayStatusChanged(PlayStatus.PLAYING)
+//                        dialog.dismiss()
+//                    }
+                    .setOnClickListener { _, view ->
+                        when(view.id) {
+                            R.id.addButton -> {
+                                val galleryIntent =
+                                    Intent(Intent.ACTION_PICK, android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+                                startActivityForResult(galleryIntent, AUDIO_GALLERY_REQUEST_CODE)
+                            }
+                            R.id.deleteAllButton -> {
+                                songs.clear()
+                                mAdapter.notifyDataSetChanged()
+                            }
+                            R.id.addFolderButton -> {
+                                importLibary()
+                                Toast.makeText(this, "Media library imported successfully", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
                         }
                     }
                     .setExpanded(false)
                     .setContentBackgroundResource(R.drawable.rounded_corner)
-                    .setHeader(mHeader)
+                    .setHeader(R.layout.playlist_header)
+                    .setFooter(R.layout.playlist_footer)
                     .setPadding(16, 8,16,0)
                     .setContentHeight(800)
                     .create()
 
-                dialog.show()
+                mDialog?.show()
                 requestPermissionForPermissions()
             }
             R.id.listModeButton -> {
@@ -403,6 +458,17 @@ class PlayerActivity : AppCompatActivity(){
     }
 
     override fun onDestroy() {
+        try {
+            openFileOutput("PlayList", Context.MODE_PRIVATE).use { fileOutputStream ->
+                var oos = ObjectOutputStream(fileOutputStream)
+                oos.writeObject(songs)
+                oos.close()
+                fileOutputStream.close()
+            }
+        } catch (e : java.lang.Exception) {
+            e.printStackTrace()
+        }
+
         stopService(playIntent)
         musicSrv = null
         System.exit(0)
@@ -434,17 +500,45 @@ class PlayerActivity : AppCompatActivity(){
                         ))
                         toast.setText("Added successfully.")
                         toast.show()
-                        mAdapter.notifyDataSetChanged()
-                        if (songs.size == 0) {
-                            onPlayingMusicChanged(PlayPosition(0))
-                        }
-                        return
                     }
+                    mAdapter.notifyDataSetChanged()
                 }
                 else toast.show()
             }
         }
         else toast.show()
+    }
+
+    private fun importLibary() {
+        songs.clear()
+        var cursor = contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            arrayOf(
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media._ID
+            ),
+            null,
+            null,
+            "")
+        with(cursor) {
+            if (this != null) {
+                while(moveToNext()) {
+                    songs.add(Song(
+                        getString(getColumnIndex(MediaStore.Audio.Media.TITLE)),
+                        Uri.withAppendedPath(Uri.parse("content://media/external/audio/media"),
+                            getLong(getColumnIndex(MediaStore.Audio.Media._ID)).toString()).toString(),
+                        getLong(getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)),
+                        getString(getColumnIndex(MediaStore.Audio.Media.ARTIST)),
+                        getString(getColumnIndex(MediaStore.Audio.Media.ALBUM))
+                    ))
+                }
+                mAdapter.notifyDataSetChanged()
+            }
+        }
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

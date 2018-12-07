@@ -18,16 +18,27 @@
             app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="18dp"
             android:textSize="18sp" android:textColor="@color/itemTitle" android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent"
-            android:elevation="4dp" android:layout_marginEnd="18dp" app:layout_constraintEnd_toEndOf="parent"/>
+            android:elevation="4dp"
+            app:layout_constraintEnd_toStartOf="@+id/deleteButton"/>
     <TextView
             android:text="@string/test_string"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="17dp" android:id="@+id/songArtist"
             android:textSize="14sp" android:textColor="@color/semiTransparentBlack"
             android:elevation="4dp"
             app:layout_constraintStart_toStartOf="@+id/songTitle"
             app:layout_constraintTop_toBottomOf="@+id/songTitle" android:layout_marginBottom="18dp"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/deleteButton"/>
+    <ImageButton
+            android:layout_width="36dp"
+            android:layout_height="36dp" app:srcCompat="@drawable/delete" android:id="@+id/deleteButton"
+            android:elevation="4dp" android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="@+id/songTitle"
+            android:layout_marginBottom="16dp" app:layout_constraintBottom_toBottomOf="@+id/view3"
+            android:layout_marginEnd="8dp" app:layout_constraintEnd_toEndOf="@+id/view3"
+            android:scaleType="centerInside"
+            android:padding="10dp"
+            android:background="?selectableItemBackgroundBorderless"/>
 
 
 </android.support.constraint.ConstraintLayout>
