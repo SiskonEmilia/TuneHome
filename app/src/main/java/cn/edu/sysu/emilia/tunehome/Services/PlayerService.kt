@@ -1,10 +1,13 @@
 package cn.edu.sysu.emilia.tunehome.Services
 
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
@@ -32,6 +35,12 @@ class PlayerService: Service(), MediaPlayer.OnPreparedListener,
     // MediaSession
     private var mMediaSessionManager : MediaSessionManager? = null
     private var mMediaSession : MediaSession? = null
+    private val mNoisyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+                playOperation(PlayOperation.PAUSE)
+        }
+    }
 
     private fun initialMediaSession() {
         if (mMediaSessionManager != null) return
@@ -43,6 +52,7 @@ class PlayerService: Service(), MediaPlayer.OnPreparedListener,
                 Log.d("MediaSession", "PLAY")
                 super.onPlay()
                 playOperation(PlayOperation.PLAY)
+                registerReceiver(mNoisyReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
             }
 
             override fun onPause() {
@@ -67,6 +77,7 @@ class PlayerService: Service(), MediaPlayer.OnPreparedListener,
                 Log.d("MediaSession", "STOP")
                 super.onStop()
                 playOperation(PlayOperation.STOP)
+                unregisterReceiver(mNoisyReceiver)
             }
 
             override fun onSeekTo(pos: Long) {
@@ -99,7 +110,6 @@ class PlayerService: Service(), MediaPlayer.OnPreparedListener,
                     KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
                         onSkipToPrevious()
                     }
-                    KeyEvent.KeyCode_
                 }
                 return true
             }
